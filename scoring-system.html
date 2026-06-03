@@ -1,14 +1,9 @@
 <!DOCTYPE html>
 <html lang="vi">
-
 <head>
-
 <meta charset="UTF-8">
-
-<meta name="viewport"
-content="width=device-width,initial-scale=1">
-
-<title>Hệ Thống Chấm Điểm</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chấm điểm 1 file</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -18,7 +13,6 @@ body{
 font-family:Arial;
 background:#f4f6fb;
 padding:20px;
-margin:0;
 }
 
 .container{
@@ -33,12 +27,11 @@ box-shadow:0 0 15px rgba(0,0,0,.1);
 button{
 padding:12px 18px;
 border:none;
-border-radius:6px;
 background:#4f67f7;
 color:white;
+border-radius:6px;
 cursor:pointer;
 margin-top:10px;
-margin-right:10px;
 }
 
 table{
@@ -58,13 +51,6 @@ background:#4f67f7;
 color:white;
 }
 
-.message{
-margin-top:15px;
-padding:10px;
-border-radius:6px;
-background:#e8f5e9;
-}
-
 </style>
 
 </head>
@@ -73,27 +59,19 @@ background:#e8f5e9;
 
 <div class="container">
 
-<h1>
-
-📊 Hệ Thống Chấm Điểm
-
-</h1>
+<h1>📊 Hệ thống chấm điểm 1 file</h1>
 
 <input
-
 type="file"
-
 accept=".xlsx,.xls"
-
 onchange="loadExcel(this)"
-
 >
 
 <br>
 
 <button onclick="scoreAll()">
 
-🧮 Chấm Điểm
+🧮 Chấm điểm
 
 </button>
 
@@ -112,15 +90,10 @@ onchange="loadExcel(this)"
 <tr>
 
 <th>SBD</th>
-
 <th>Mã đề</th>
-
 <th>Reading</th>
-
 <th>Listening</th>
-
 <th>Tổng</th>
-
 <th>Trạng thái</th>
 
 </tr>
@@ -145,17 +118,13 @@ let students=[];
 
 let results=[];
 
-let questionCols=[];
-
 function msg(text){
 
 document.getElementById(
 
 "message"
 
-).innerHTML=
-
-`<div class="message">${text}</div>`;
+).innerHTML=text;
 
 }
 
@@ -169,7 +138,7 @@ const reader=new FileReader();
 
 reader.onload=(e)=>{
 
-const workbook=
+const wb=
 
 XLSX.read(
 
@@ -179,20 +148,14 @@ e.target.result
 
 ),
 
-{
-
-type:"array"
-
-}
+{type:"array"}
 
 );
 
 const sheet=
 
-workbook.Sheets[
-
-workbook.SheetNames[0]
-
+wb.Sheets[
+wb.SheetNames[0]
 ];
 
 rawRows=
@@ -227,8 +190,6 @@ answerKeys={};
 
 students=[];
 
-questionCols=[];
-
 let headerRow=-1;
 
 for(
@@ -243,25 +204,21 @@ i++
 
 const row=
 
-rawRows[i];
+rawRows[i]
 
-const found=
-
-row.some(
-
-x=>
+.map(x=>
 
 String(x)
 
 .trim()
 
-.toUpperCase()
-
-==="SBD"
-
 );
 
-if(found){
+if(
+
+row.includes("SBD")
+
+){
 
 headerRow=i;
 
@@ -271,7 +228,11 @@ break;
 
 }
 
-if(headerRow===-1){
+if(
+
+headerRow===-1
+
+){
 
 msg(
 
@@ -283,53 +244,53 @@ return;
 
 }
 
-const studentHeader=
+const header=
 
 rawRows[headerRow]
 
-.map(
+.map(x=>
 
-x=>String(x).trim()
+String(x)
+
+.trim()
 
 );
 
 const sbdIndex=
 
-studentHeader.findIndex(
+header.indexOf(
 
-x=>
-
-x.toUpperCase()
-
-==="SBD"
+"SBD"
 
 );
 
 const codeIndex=
 
-studentHeader.findIndex(
+header.indexOf(
 
-x=>
+"Mã Đề"
 
-x.toUpperCase()
+)>=0
 
-==="MÃ ĐỀ"
+?
 
-||
+header.indexOf(
 
-x.toUpperCase()
+"Mã Đề"
 
-==="MÃ ĐỀ "
+)
 
-||
+:
 
-x.toUpperCase()
+header.indexOf(
 
-==="MÃ ĐỀ"
+"Mã đề"
 
 );
 
-studentHeader.forEach(
+const questionCols=[];
+
+header.forEach(
 
 (col,index)=>{
 
@@ -337,9 +298,7 @@ const n=
 
 parseInt(
 
-String(col)
-
-.trim()
+col
 
 );
 
@@ -381,7 +340,7 @@ a.question-b.question
 
 for(
 
-let i=1;
+let i=0;
 
 i<headerRow;
 
@@ -397,31 +356,19 @@ const code=
 
 String(
 
-row[4] ?? ''
+row[codeIndex] ?? ''
 
 )
 
 .trim();
 
-if(
+if(!code)continue;
 
-!code
-
-||
-
-code.toUpperCase()
-
-==="MÃ ĐỀ"
-
-)
-
-continue;
-
-let answers=[];
+let ans=[];
 
 questionCols.forEach(q=>{
 
-answers.push(
+ans.push(
 
 String(
 
@@ -437,7 +384,7 @@ row[q.col] ?? ''
 
 });
 
-answerKeys[code]=answers;
+answerKeys[code]=ans;
 
 }
 
@@ -489,9 +436,13 @@ row
 
 msg(
 
-`Đã đọc ${students.length} sinh viên | ${Object.keys(answerKeys).length} mã đề`
+`Đọc được ${students.length} sinh viên và ${Object.keys(answerKeys).length} mã đề`
 
 );
+
+window.questionCols=
+
+questionCols;
 
 }
 
@@ -553,7 +504,11 @@ ans===key[index]
 
 ){
 
-if(index<40){
+if(
+
+index<40
+
+){
 
 reading+=0.25;
 
@@ -601,11 +556,11 @@ status:"OK"
 
 });
 
-renderResults();
+render();
 
 }
 
-function renderResults(){
+function render(){
 
 const tbody=
 
@@ -631,15 +586,7 @@ tbody.innerHTML += `
 
 <td>${r.listening}</td>
 
-<td>
-
-<strong>
-
-${r.total}
-
-</strong>
-
-</td>
+<td>${r.total}</td>
 
 <td>${r.status}</td>
 
@@ -719,7 +666,7 @@ XLSX.writeFile(
 
 wb,
 
-`KetQuaCham_${Date.now()}.xlsx`
+`KetQua_${Date.now()}.xlsx`
 
 );
 
@@ -728,5 +675,4 @@ wb,
 </script>
 
 </body>
-
 </html>
