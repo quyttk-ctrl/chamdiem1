@@ -376,26 +376,6 @@
             background: #ee5a52;
         }
 
-        .loading {
-            text-align: center;
-            padding: 20px;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
         @media (max-width: 768px) {
             .row {
                 grid-template-columns: 1fr;
@@ -457,49 +437,26 @@
         <div id="batch" class="tab-content">
             <div class="info-box">
                 <h3>📥 Chấm Hàng Loạt Cả Lớp</h3>
-                <p><strong>Upload 1 file Excel</strong> chứa danh sách sinh viên + đáp án của cả lớp → hệ thống chấm tất cả cùng lúc.</p>
+                <p><strong>Upload 1 file Excel</strong> chứa danh sách sinh viên + 55 câu đáp án nằm ngang → hệ thống chấm tất cả cùng lúc.</p>
             </div>
 
             <div class="config-section" style="background: #e8f5e9; border-left: 4px solid #4caf50;">
                 <h3 style="color: #2e7d32;">📋 Định Dạng File Excel Cần Upload</h3>
-                <p style="color: #1b5e20; margin-bottom: 15px;"><strong>File Excel phải có các cột sau:</strong></p>
-                <table style="background: white;">
-                    <thead>
-                        <tr style="background: #4caf50; color: white;">
-                            <th>Mã SV</th>
-                            <th>Họ Tên</th>
-                            <th>Mã Đề</th>
-                            <th>Đáp Án</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>21010101</td>
-                            <td>Nguyễn Văn A</td>
-                            <td>ĐHXD-2024-A</td>
-                            <td>A B C D A B ... (55 câu)</td>
-                        </tr>
-                        <tr>
-                            <td>21010102</td>
-                            <td>Trần Thị B</td>
-                            <td>ĐHXD-2024-B</td>
-                            <td>C D A B C D ... (55 câu)</td>
-                        </tr>
-                        <tr>
-                            <td>21010103</td>
-                            <td>Lê Văn C</td>
-                            <td>ĐHXD-2024-A</td>
-                            <td>B A D C B A ... (55 câu)</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <p style="color: #1b5e20; margin-top: 15px; font-size: 12px;">
-                    💡 <strong>Lưu ý:</strong> Cột "Đáp Án" có thể viết là "A B C..." (cách khoảng trắng) hoặc "ABCD..." (không cách).
+                <p style="color: #1b5e20; margin-bottom: 15px;"><strong>File Excel phải có cấu trúc (55 cột đáp án nằm ngang):</strong></p>
+                <p style="color: #1b5e20; margin-bottom: 10px;">
+                    <strong>Hàng 1 (Tiêu đề):</strong><br>
+                    Cột A: STT | Cột B: Họ Tên | Cột C: Mã SV | Cột D: Mã Đề | Cột E-BG: Câu 1, Câu 2, ..., Câu 55<br>
+                    <br>
+                    <strong>Hàng 2+ (Dữ liệu sinh viên):</strong><br>
+                    Cột A: 1 | Cột B: Nguyễn Văn A | Cột C: 20001 | Cột D: ĐHXD-2024-A | Cột E-BG: A, B, C, D, A, ..., D (55 câu)
+                </p>
+                <p style="color: #1b5e20; font-size: 12px;">
+                    💡 <strong>Lưu ý:</strong> 55 câu đáp án nằm trên cùng 1 hàng (từ cột E đến BG), không phải nằm dọc!
                 </p>
             </div>
 
             <div class="form-group">
-                <label>📂 Upload File Excel (danh sách SV + đáp án):</label>
+                <label>📂 Upload File Excel (danh sách SV + 55 cột đáp án nằm ngang):</label>
                 <div class="file-input-wrapper">
                     <label class="file-input-label" for="excelFile">
                         📂 Chọn File Excel
@@ -507,20 +464,6 @@
                     <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" onchange="handleFileUpload(this)">
                 </div>
                 <div id="fileName"></div>
-            </div>
-
-            <div class="form-group">
-                <label>Chọn cột "Mã Đề" trong file:</label>
-                <select id="codeColumn">
-                    <option value="">-- Chọn cột --</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Chọn cột "Đáp Án Sinh Viên" trong file:</label>
-                <select id="answerColumn">
-                    <option value="">-- Chọn cột --</option>
-                </select>
             </div>
 
             <div class="button-group">
@@ -606,23 +549,13 @@
             <div class="config-section">
                 <h3>2️⃣ Bước 2: Chấm Hàng Loạt Cả Lớp (Cách Nhanh Nhất) ⭐</h3>
                 <p style="line-height: 1.8; color: #555;">
-                    • <strong>Chuẩn bị file Excel</strong> với 4 cột: Mã SV, Họ Tên, Mã Đề, Đáp Án<br>
+                    • <strong>Chuẩn bị file Excel</strong> với cấu trúc:<br>
+                    &nbsp;&nbsp;- Dòng 1 (Tiêu đề): STT | Họ Tên | Mã SV | Mã Đề | Câu 1 | Câu 2 | ... | Câu 55<br>
+                    &nbsp;&nbsp;- Dòng 2+: 1 | Nguyễn Văn A | 20001 | ĐHXD-2024-A | A | B | C | ... | D (55 câu)<br>
                     • Vào tab <strong>"📥 Chấm Hàng Loạt"</strong><br>
-                    • <strong>Upload file Excel</strong> → danh sách sinh viên<br>
-                    • Chọn cột <strong>"Mã Đề"</strong> và <strong>"Đáp Án"</strong> từ dropdown<br>
-                    • Bấm <strong>"🧮 Chấm Tất Cả"</strong> → hệ thống chấm toàn bộ lớp<br>
+                    • <strong>Upload file Excel</strong><br>
+                    • Bấm <strong>"🧮 Chấm Tất Cả"</strong> → hệ thống tự động đọc 55 cột và chấm<br>
                     • Bấm <strong>"📥 Xuất File Excel"</strong> → tải bảng điểm về máy
-                </p>
-            </div>
-
-            <div class="config-section">
-                <h3>3️⃣ Bước 3: Chấm Từng Sinh Viên (Nếu Cần)</h3>
-                <p style="line-height: 1.8; color: #555;">
-                    • Vào tab <strong>"✏️ Chấm Từng Sinh Viên"</strong><br>
-                    • Điền: Mã SV, Họ tên, chọn mã đề<br>
-                    • Dán 55 đáp án của sinh viên<br>
-                    • Bấm <strong>"🧮 Tính Điểm"</strong> → xem kết quả<br>
-                    • Bấm <strong>"📥 Xuất File Excel"</strong> → lưu kết quả
                 </p>
             </div>
 
@@ -661,10 +594,9 @@
             <div class="config-section">
                 <h3>💡 Mẹo Sử Dụng</h3>
                 <p style="line-height: 1.8; color: #555;">
-                    ✓ Dữ liệu cấu hình lưu vĩnh viễn trong trình duyệt (không mất khi reload)<br>
-                    ✓ File Excel có thể chứa đáp án ở dạng "A B C D..." hoặc "ABCD..." (tự động nhận)<br>
-                    ✓ Tên cột không phân biệt hoa/thường (Mã SV, mã sv, MÃ SV đều được)<br>
-                    ✓ Đáp án chỉ nhận A, B, C, D (không phân biệt hoa/thường)<br>
+                    ✓ Dữ liệu cấu hình lưu vĩnh viễn trong trình duyệt<br>
+                    ✓ File Excel tự động đọc 55 cột từ cột E đến BG (nằm ngang)<br>
+                    ✓ Hệ thống tự động ghép các đáp án từ 55 cột thành 1 chuỗi để so sánh<br>
                     ✓ Chấm 100 sinh viên chỉ mất vài giây!<br>
                     ✓ Xuất kết quả để lưu trữ, chia sẻ, hoặc in bảng điểm
                 </p>
@@ -674,6 +606,7 @@
 
     <script>
         let uploadedData = [];
+        let allColumns = [];
 
         // Khởi tạo khi load trang
         window.addEventListener('load', () => {
@@ -838,27 +771,17 @@
                     const workbook = XLSX.read(data, { type: 'array' });
                     const sheetName = workbook.SheetNames[0];
                     const sheet = workbook.Sheets[sheetName];
-                    uploadedData = XLSX.utils.sheet_to_json(sheet);
+                    
+                    // Đọc dữ liệu theo hàng
+                    uploadedData = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+                    allColumns = Object.keys(uploadedData[0] || {});
 
                     if (uploadedData.length === 0) {
                         showMessage('batchMessage', 'File không chứa dữ liệu!', 'error');
                         return;
                     }
 
-                    const columns = Object.keys(uploadedData[0]);
-                    
-                    const codeCol = document.getElementById('codeColumn');
-                    const ansCol = document.getElementById('answerColumn');
-                    
-                    codeCol.innerHTML = '<option value="">-- Chọn cột --</option>';
-                    ansCol.innerHTML = '<option value="">-- Chọn cột --</option>';
-                    
-                    columns.forEach(col => {
-                        codeCol.innerHTML += `<option value="${col}">${col}</option>`;
-                        ansCol.innerHTML += `<option value="${col}">${col}</option>`;
-                    });
-
-                    showMessage('batchMessage', `✅ Upload thành công! Tìm thấy ${uploadedData.length} sinh viên.`, 'success');
+                    showMessage('batchMessage', `✅ Upload thành công! Tìm thấy ${uploadedData.length} sinh viên, ${allColumns.length} cột.`, 'success');
                 } catch (error) {
                     showMessage('batchMessage', `❌ Lỗi đọc file: ${error.message}`, 'error');
                 }
@@ -872,47 +795,28 @@
                 return;
             }
 
-            const codeCol = document.getElementById('codeColumn').value;
-            const ansCol = document.getElementById('answerColumn').value;
-
-            if (!codeCol || !ansCol) {
-                showMessage('batchMessage', 'Vui lòng chọn cột "Mã Đề" và "Đáp Án"!', 'error');
-                return;
-            }
-
             const configs = JSON.parse(localStorage.getItem('examConfigs') || '{}');
             const results = [];
             let successCount = 0, errorCount = 0;
 
             uploadedData.forEach((row, index) => {
-                // Tìm cột Mã SV, Họ Tên từ các tên có thể
-                let studentId = '';
-                let studentName = '';
-                
-                for (let key in row) {
-                    const lowerKey = key.toLowerCase().replace(/\s/g, '');
-                    if (lowerKey.includes('masv') || lowerKey === 'id' || lowerKey === 'mã' || lowerKey === 'studentid') {
-                        studentId = row[key] || '';
-                    }
-                    if (lowerKey.includes('tên') || lowerKey.includes('hocsv') || lowerKey.includes('name') || lowerKey.includes('họ')) {
-                        studentName = row[key] || '';
-                    }
-                }
+                // Lấy dữ liệu từ cột A, B, C, D (4 cột đầu)
+                const stt = row[allColumns[0]] || index + 1;
+                const studentName = row[allColumns[1]] || 'N/A';
+                const studentId = row[allColumns[2]] || 'N/A';
+                const code = row[allColumns[3]] || '';
 
-                const code = row[codeCol];
-                const answersText = row[ansCol];
-
-                if (!code || !answersText) {
+                if (!code) {
                     errorCount++;
                     results.push({
-                        stt: index + 1,
-                        studentId: studentId || 'N/A',
-                        studentName: studentName || 'N/A',
-                        code: code || 'N/A',
+                        stt,
+                        studentId,
+                        studentName,
+                        code: 'N/A',
                         clo1: 'Lỗi',
                         clo2: 'Lỗi',
                         total: 'Lỗi',
-                        status: '❌ Thiếu dữ liệu'
+                        status: '❌ Thiếu mã đề'
                     });
                     return;
                 }
@@ -921,7 +825,7 @@
                 if (!correctAnswers) {
                     errorCount++;
                     results.push({
-                        stt: index + 1,
+                        stt,
                         studentId,
                         studentName,
                         code,
@@ -933,34 +837,56 @@
                     return;
                 }
 
-                const studentAnswersArray = answersText.toString().toUpperCase().split(/[\s,\n]+/).filter(a => a);
+                // Lấy 55 câu từ cột E trở đi (nằm ngang trên 1 hàng)
+                const studentAnswers = allColumns.slice(4, 59).map(col => {
+                    const val = row[col] ? row[col].toString().toUpperCase().trim() : '';
+                    return val;
+                });
 
-                if (studentAnswersArray.length !== 55) {
+                if (studentAnswers.length !== 55) {
                     errorCount++;
                     results.push({
-                        stt: index + 1,
+                        stt,
                         studentId,
                         studentName,
                         code,
                         clo1: 'Sai số',
                         clo2: 'Sai số',
                         total: 'Sai số',
-                        status: `⚠️ ${studentAnswersArray.length} câu`
+                        status: `⚠️ ${studentAnswers.length} câu`
                     });
                     return;
                 }
 
+                // Kiểm tra tất cả câu có hợp lệ không
+                for (let ans of studentAnswers) {
+                    if (ans && !'ABCD'.includes(ans)) {
+                        errorCount++;
+                        results.push({
+                            stt,
+                            studentId,
+                            studentName,
+                            code,
+                            clo1: 'Sai',
+                            clo2: 'Sai',
+                            total: 'Sai',
+                            status: `⚠️ Đáp án sai: "${ans}"`
+                        });
+                        return;
+                    }
+                }
+
                 let score1 = 0, score2 = 0;
                 for (let i = 0; i < 40; i++) {
-                    if (studentAnswersArray[i] === correctAnswers[i]) score1 += 0.25;
+                    if (studentAnswers[i] === correctAnswers[i]) score1 += 0.25;
                 }
                 for (let i = 40; i < 55; i++) {
-                    if (studentAnswersArray[i] === correctAnswers[i]) score2 += 0.5;
+                    if (studentAnswers[i] === correctAnswers[i]) score2 += 0.5;
                 }
 
                 successCount++;
                 results.push({
-                    stt: index + 1,
+                    stt,
                     studentId,
                     studentName,
                     code,
@@ -1019,10 +945,9 @@
 
         function clearBatchForm() {
             uploadedData = [];
+            allColumns = [];
             document.getElementById('excelFile').value = '';
             document.getElementById('fileName').innerHTML = '';
-            document.getElementById('codeColumn').innerHTML = '<option value="">-- Chọn cột --</option>';
-            document.getElementById('answerColumn').innerHTML = '<option value="">-- Chọn cột --</option>';
             document.getElementById('batchResultContainer').style.display = 'none';
             document.getElementById('batchExportBtn').innerHTML = '';
             document.getElementById('batchMessage').innerHTML = '';
