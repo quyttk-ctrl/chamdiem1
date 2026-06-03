@@ -171,15 +171,6 @@
             background: #e0e0e0;
         }
 
-        .btn-danger {
-            background: #ff6b6b;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #ee5a52;
-        }
-
         .answer-input-row {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
@@ -243,6 +234,14 @@
             margin-top: 20px;
         }
 
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+
         .score-result {
             background: linear-gradient(135deg, #fff9c4 0%, #fff176 100%);
             padding: 20px;
@@ -297,11 +296,14 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
+            overflow-x: auto;
         }
 
         table thead {
             background: #667eea;
             color: white;
+            position: sticky;
+            top: 0;
         }
 
         table th,
@@ -313,6 +315,51 @@
 
         table tr:hover {
             background: #f5f5f5;
+        }
+
+        .table-container {
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .file-input-label:hover {
+            background: #5568d3;
+        }
+
+        .file-name {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            color: #333;
+            font-weight: 500;
         }
 
         .delete-btn {
@@ -327,6 +374,26 @@
 
         .delete-btn:hover {
             background: #ee5a52;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         @media (max-width: 768px) {
@@ -347,6 +414,12 @@
             .header h1 {
                 font-size: 20px;
             }
+
+            table th,
+            table td {
+                padding: 8px;
+                font-size: 12px;
+            }
         }
     </style>
 </head>
@@ -359,7 +432,8 @@
 
         <div class="tabs">
             <button class="tab-button active" onclick="switchTab('config', this)">⚙️ Cấu Hình Đáp Án</button>
-            <button class="tab-button" onclick="switchTab('score', this)">✏️ Chấm Điểm</button>
+            <button class="tab-button" onclick="switchTab('batch', this)">📥 Chấm Hàng Loạt</button>
+            <button class="tab-button" onclick="switchTab('single', this)">✏️ Chấm Từng Sinh Viên</button>
             <button class="tab-button" onclick="switchTab('guide', this)">📖 Hướng Dẫn</button>
         </div>
 
@@ -379,11 +453,69 @@
             <div id="configMessage"></div>
         </div>
 
-        <!-- TAB 2: CHẤM ĐIỂM -->
-        <div id="score" class="tab-content">
+        <!-- TAB 2: CHẤM HÀNG LOẠT -->
+        <div id="batch" class="tab-content">
             <div class="info-box">
-                <h3>✏️ Nhập Thông Tin & Đáp Án Sinh Viên</h3>
-                <p>Điền thông tin sinh viên, chọn mã đề, và dán đáp án để tính điểm tự động.</p>
+                <h3>📥 Chấm Hàng Loạt Sinh Viên</h3>
+                <p>Upload file Excel chứa danh sách sinh viên + đáp án → hệ thống sẽ chấm tất cả cùng lúc.</p>
+            </div>
+
+            <div class="form-group">
+                <label>Upload File Excel (chứa danh sách SV + đáp án):</label>
+                <div class="file-input-wrapper">
+                    <label class="file-input-label" for="excelFile">
+                        📂 Chọn File Excel
+                    </label>
+                    <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" onchange="handleFileUpload(this)">
+                </div>
+                <div id="fileName"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Chọn cột "Mã Đề" trong file:</label>
+                <select id="codeColumn">
+                    <option value="">-- Chọn cột --</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Chọn cột "Đáp Án Sinh Viên" trong file:</label>
+                <select id="answerColumn">
+                    <option value="">-- Chọn cột --</option>
+                </select>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-secondary" onclick="clearBatchForm()">🔄 Xóa</button>
+                <button class="btn-primary" onclick="batchScore()">🧮 Chấm Tất Cả</button>
+            </div>
+
+            <div id="batchMessage"></div>
+            <div class="table-container" id="batchResultContainer" style="display: none;">
+                <table id="batchResultTable">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Mã SV</th>
+                            <th>Họ Tên</th>
+                            <th>Mã Đề</th>
+                            <th>CLO 1</th>
+                            <th>CLO 2</th>
+                            <th>Tổng</th>
+                        </tr>
+                    </thead>
+                    <tbody id="batchResultBody"></tbody>
+                </table>
+            </div>
+
+            <div id="batchExportBtn"></div>
+        </div>
+
+        <!-- TAB 3: CHẤM TỪNG SINH VIÊN -->
+        <div id="single" class="tab-content">
+            <div class="info-box">
+                <h3>✏️ Chấm Từng Sinh Viên</h3>
+                <p>Điền thông tin sinh viên, chọn mã đề, và dán đáp án để tính điểm.</p>
             </div>
 
             <div class="row">
@@ -417,7 +549,7 @@
             <div id="scoreResult"></div>
         </div>
 
-        <!-- TAB 3: HƯỚNG DẪN -->
+        <!-- TAB 4: HƯỚNG DẪN -->
         <div id="guide" class="tab-content">
             <h2 style="margin-bottom: 20px; color: #333;">📖 Hướng Dẫn Sử Dụng</h2>
 
@@ -425,30 +557,36 @@
                 <h3>1️⃣ Bước 1: Cấu Hình Đáp Án</h3>
                 <p style="line-height: 1.8; color: #555;">
                     • Vào tab <strong>"⚙️ Cấu Hình Đáp Án"</strong><br>
-                    • Bấm <strong>"➕ Thêm Mã Đề Mới"</strong> để thêm mã đề<br>
-                    • Nhập tên mã đề (VD: ĐHXD-2024-A)<br>
-                    • Nhập 55 đáp án, mỗi ô 1 câu (A, B, C hoặc D)<br>
-                    • Bấm <strong>"💾 Lưu Tất Cả"</strong> → dữ liệu được lưu trong trình duyệt
+                    • Bấm <strong>"➕ Thêm Mã Đề Mới"</strong><br>
+                    • Nhập tên mã đề và 55 đáp án (A, B, C, D)<br>
+                    • Bấm <strong>"💾 Lưu Tất Cả"</strong>
                 </p>
             </div>
 
             <div class="config-section">
-                <h3>2️⃣ Bước 2: Chấm Điểm Sinh Viên</h3>
+                <h3>2️⃣ Bước 2a: Chấm Hàng Loạt (Khuyên Dùng)</h3>
                 <p style="line-height: 1.8; color: #555;">
-                    • Vào tab <strong>"✏️ Chấm Điểm"</strong><br>
-                    • Điền: <strong>Mã sinh viên</strong>, <strong>Họ tên</strong><br>
-                    • Chọn <strong>mã đề</strong> tương ứng<br>
-                    • Dán <strong>55 đáp án</strong> của sinh viên (cách nhau bằng khoảng trắng, phẩy, hoặc xuống dòng)<br>
-                    • Bấm <strong>"🧮 Tính Điểm"</strong> → kết quả hiển thị ngay
+                    • Vào tab <strong>"📥 Chấm Hàng Loạt"</strong><br>
+                    • Upload file Excel chứa danh sách SV<br>
+                    • File Excel cần có các cột:<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;- <strong>Mã SV</strong> (hoặc StudentID, ID...)<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;- <strong>Họ Tên</strong> (hoặc Name, Tên...)<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;- <strong>Mã Đề</strong> (hoặc Code, ExamCode...)<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;- <strong>Đáp Án</strong> (hoặc Answers, Answer...)<br>
+                    • Chọn cột "Mã Đề" và "Đáp Án"<br>
+                    • Bấm <strong>"🧮 Chấm Tất Cả"</strong> → kết quả hiển thị ngay<br>
+                    • Bấm <strong>"📥 Xuất File Excel"</strong> để tải kết quả
                 </p>
             </div>
 
             <div class="config-section">
-                <h3>3️⃣ Bước 3: Xuất File Excel</h3>
+                <h3>2️⃣ Bước 2b: Chấm Từng Sinh Viên</h3>
                 <p style="line-height: 1.8; color: #555;">
-                    • Sau khi tính điểm, bấm <strong>"📥 Xuất File Excel"</strong><br>
-                    • File Excel sẽ tự động download về máy<br>
-                    • Có thể dùng để lưu trữ, chia sẻ, hoặc in kết quả
+                    • Vào tab <strong>"✏️ Chấm Từng Sinh Viên"</strong><br>
+                    • Điền: Mã SV, Họ tên, chọn mã đề<br>
+                    • Dán 55 đáp án<br>
+                    • Bấm <strong>"🧮 Tính Điểm"</strong><br>
+                    • Bấm <strong>"📥 Xuất File Excel"</strong>
                 </p>
             </div>
 
@@ -485,19 +623,49 @@
             </div>
 
             <div class="config-section">
+                <h3>📝 Định Dạng File Excel Cho Chấm Hàng Loạt</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã SV</th>
+                            <th>Họ Tên</th>
+                            <th>Mã Đề</th>
+                            <th>Đáp Án</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>21010101</td>
+                            <td>Nguyễn Văn A</td>
+                            <td>ĐHXD-2024-A</td>
+                            <td>A B C D A B ... (55 câu)</td>
+                        </tr>
+                        <tr>
+                            <td>21010102</td>
+                            <td>Trần Thị B</td>
+                            <td>ĐHXD-2024-B</td>
+                            <td>C D A B C D ... (55 câu)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="config-section">
                 <h3>💡 Mẹo Sử Dụng</h3>
                 <p style="line-height: 1.8; color: #555;">
-                    ✓ Dữ liệu cấu hình lưu trong trình duyệt → không mất khi reload trang<br>
-                    ✓ Có thể chấm liên tiếp nhiều sinh viên<br>
-                    ✓ Xuất file Excel để lưu trữ hoặc chia sẻ<br>
-                    ✓ Nếu muốn xóa mã đề, bấm nút ❌ ở tab cấu hình<br>
-                    ✓ Đáp án chỉ nhận A, B, C, D (không phân biệt chữ hoa/thường)
+                    ✓ Dữ liệu cấu hình lưu trong trình duyệt<br>
+                    ✓ File Excel cột "Đáp Án" có thể là: "A B C D..." hoặc "ABCD..." (tự động xử lý)<br>
+                    ✓ Tên cột không phân biệt hoa/thường<br>
+                    ✓ Đáp án chỉ nhận A, B, C, D (không phân biệt hoa/thường)<br>
+                    ✓ Xuất kết quả để lưu trữ hoặc chia sẻ
                 </p>
             </div>
         </div>
     </div>
 
     <script>
+        let uploadedData = [];
+
         // Khởi tạo khi load trang
         window.addEventListener('load', () => {
             loadConfigs();
@@ -513,7 +681,7 @@
             button.classList.add('active');
         }
 
-        // Tải cấu hình từ localStorage
+        // ========== PHẦN CẤU HÌNH ==========
         function loadConfigs() {
             const configs = JSON.parse(localStorage.getItem('examConfigs') || '{}');
             const container = document.getElementById('codesContainer');
@@ -529,13 +697,11 @@
             }
         }
 
-        // Thêm mã đề mới
         function addNewCode() {
             const container = document.getElementById('codesContainer');
             const index = container.children.length;
             const section = document.createElement('div');
             section.className = 'config-section';
-            section.id = `code-section-${index}`;
             
             let answersHtml = '';
             for (let i = 1; i <= 55; i++) {
@@ -545,27 +711,23 @@
             section.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3>Mã Đề ${index + 1}</h3>
-                    <button class="delete-btn" onclick="deleteCodeSection(${index})">❌ Xóa</button>
+                    <button class="delete-btn" onclick="deleteCodeSection(this)">❌ Xóa</button>
                 </div>
                 <div class="form-group">
                     <label>Tên mã đề:</label>
                     <input type="text" class="code-name" placeholder="VD: ĐHXD-2024-A" value="">
                 </div>
-                <label style="margin-bottom: 10px; font-weight: 600;">Đáp án 55 câu (A, B, C hoặc D):</label>
-                <div class="answer-input-row" style="grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));">
-                    ${answersHtml}
-                </div>
+                <label style="margin-bottom: 10px; font-weight: 600;">Đáp án 55 câu:</label>
+                <div class="answer-input-row">${answersHtml}</div>
             `;
             
             container.appendChild(section);
         }
 
-        // Tạo section cấu hình
         function createCodeSection(codeName, answers) {
             const container = document.getElementById('codesContainer');
             const section = document.createElement('div');
             section.className = 'config-section';
-            section.id = `code-section-${codeName}`;
             
             let answersHtml = answers.map((ans, i) => 
                 `<input type="text" class="answer-input" maxlength="1" placeholder="${i+1}" value="${ans}" style="text-transform: uppercase;">`
@@ -581,15 +743,12 @@
                     <input type="text" class="code-name" value="${codeName}" readonly>
                 </div>
                 <label style="margin-bottom: 10px; font-weight: 600;">Đáp án 55 câu:</label>
-                <div class="answer-input-row" style="grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));">
-                    ${answersHtml}
-                </div>
+                <div class="answer-input-row">${answersHtml}</div>
             `;
             
             container.appendChild(section);
         }
 
-        // Xóa mã đề
         function deleteCode(codeName) {
             if (confirm(`Xóa mã đề "${codeName}"?`)) {
                 const configs = JSON.parse(localStorage.getItem('examConfigs') || '{}');
@@ -601,13 +760,10 @@
             }
         }
 
-        // Xóa section
-        function deleteCodeSection(index) {
-            const section = document.getElementById(`code-section-${index}`);
-            if (section) section.remove();
+        function deleteCodeSection(button) {
+            button.closest('.config-section').remove();
         }
 
-        // Lưu tất cả cấu hình
         function saveAllConfigs() {
             const configs = {};
             const sections = document.getElementById('codesContainer').children;
@@ -647,18 +803,203 @@
             showMessage('configMessage', '✅ Đã lưu tất cả cấu hình!', 'success');
         }
 
-        // Cập nhật dropdown mã đề
         function updateCodeSelect() {
             const configs = JSON.parse(localStorage.getItem('examConfigs') || '{}');
-            const select = document.getElementById('codeSelect');
             
-            select.innerHTML = '<option value="">-- Chọn mã đề --</option>';
-            Object.keys(configs).forEach(code => {
-                select.innerHTML += `<option value="${code}">${code}</option>`;
-            });
+            // Update select cho chấm từng sinh viên
+            const select1 = document.getElementById('codeSelect');
+            if (select1) {
+                select1.innerHTML = '<option value="">-- Chọn mã đề --</option>';
+                Object.keys(configs).forEach(code => {
+                    select1.innerHTML += `<option value="${code}">${code}</option>`;
+                });
+            }
         }
 
-        // Tính điểm
+        // ========== PHẦN UPLOAD & CHẤM HÀNG LOẠT ==========
+        function handleFileUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            document.getElementById('fileName').innerHTML = `<div class="file-name">📄 ${file.name}</div>`;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    uploadedData = XLSX.utils.sheet_to_json(sheet);
+
+                    if (uploadedData.length === 0) {
+                        showMessage('batchMessage', 'File không chứa dữ liệu!', 'error');
+                        return;
+                    }
+
+                    // Lấy tên cột
+                    const columns = Object.keys(uploadedData[0]);
+                    
+                    // Update dropdown cột
+                    const codeCol = document.getElementById('codeColumn');
+                    const ansCol = document.getElementById('answerColumn');
+                    
+                    codeCol.innerHTML = '<option value="">-- Chọn cột --</option>';
+                    ansCol.innerHTML = '<option value="">-- Chọn cột --</option>';
+                    
+                    columns.forEach(col => {
+                        codeCol.innerHTML += `<option value="${col}">${col}</option>`;
+                        ansCol.innerHTML += `<option value="${col}">${col}</option>`;
+                    });
+
+                    showMessage('batchMessage', `✅ Upload thành công! Tìm thấy ${uploadedData.length} sinh viên.`, 'success');
+                } catch (error) {
+                    showMessage('batchMessage', `❌ Lỗi đọc file: ${error.message}`, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function batchScore() {
+            if (uploadedData.length === 0) {
+                showMessage('batchMessage', 'Vui lòng upload file trước!', 'error');
+                return;
+            }
+
+            const codeCol = document.getElementById('codeColumn').value;
+            const ansCol = document.getElementById('answerColumn').value;
+
+            if (!codeCol || !ansCol) {
+                showMessage('batchMessage', 'Vui lòng chọn cột "Mã Đề" và "Đáp Án"!', 'error');
+                return;
+            }
+
+            const configs = JSON.parse(localStorage.getItem('examConfigs') || '{}');
+            const results = [];
+
+            uploadedData.forEach((row, index) => {
+                const studentId = row['Mã SV'] || row['StudentID'] || row['ID'] || row['Mã'] || '';
+                const studentName = row['Họ Tên'] || row['Tên'] || row['Name'] || row['Họ tên'] || '';
+                const code = row[codeCol];
+                const answersText = row[ansCol];
+
+                if (!code || !answersText) {
+                    results.push({
+                        stt: index + 1,
+                        studentId: studentId || 'N/A',
+                        studentName: studentName || 'N/A',
+                        code: code || 'N/A',
+                        clo1: 'Lỗi',
+                        clo2: 'Lỗi',
+                        total: 'Lỗi'
+                    });
+                    return;
+                }
+
+                const correctAnswers = configs[code];
+                if (!correctAnswers) {
+                    results.push({
+                        stt: index + 1,
+                        studentId,
+                        studentName,
+                        code,
+                        clo1: 'Mã sai',
+                        clo2: 'Mã sai',
+                        total: 'Mã sai'
+                    });
+                    return;
+                }
+
+                const studentAnswersArray = answersText.toString().toUpperCase().split(/[\s,\n]+/).filter(a => a);
+
+                if (studentAnswersArray.length !== 55) {
+                    results.push({
+                        stt: index + 1,
+                        studentId,
+                        studentName,
+                        code,
+                        clo1: 'Sai số',
+                        clo2: 'Sai số',
+                        total: 'Sai số'
+                    });
+                    return;
+                }
+
+                let score1 = 0, score2 = 0;
+                for (let i = 0; i < 40; i++) {
+                    if (studentAnswersArray[i] === correctAnswers[i]) score1 += 0.25;
+                }
+                for (let i = 40; i < 55; i++) {
+                    if (studentAnswersArray[i] === correctAnswers[i]) score2 += 0.5;
+                }
+
+                results.push({
+                    stt: index + 1,
+                    studentId,
+                    studentName,
+                    code,
+                    clo1: score1.toFixed(2),
+                    clo2: score2.toFixed(2),
+                    total: (score1 + score2).toFixed(2)
+                });
+            });
+
+            // Hiển thị bảng kết quả
+            const tbody = document.getElementById('batchResultBody');
+            tbody.innerHTML = '';
+            results.forEach(result => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${result.stt}</td>
+                    <td>${result.studentId}</td>
+                    <td>${result.studentName}</td>
+                    <td>${result.code}</td>
+                    <td>${result.clo1}</td>
+                    <td>${result.clo2}</td>
+                    <td><strong>${result.total}</strong></td>
+                `;
+            });
+
+            document.getElementById('batchResultContainer').style.display = 'block';
+            document.getElementById('batchExportBtn').innerHTML = `
+                <button class="btn-primary" style="margin-top: 20px; width: 100%;" onclick="exportBatchResults()">📥 Xuất File Excel</button>
+            `;
+
+            showMessage('batchMessage', `✅ Chấm thành công ${results.length} sinh viên!`, 'success');
+            window.batchResults = results;
+        }
+
+        function exportBatchResults() {
+            const results = window.batchResults;
+            const data = [
+                ['HỆ THỐNG CHẤM ĐIỂM BÀI THI - HÀNG LOẠT'],
+                ['Ngày chấm:', new Date().toLocaleDateString('vi-VN')],
+                [],
+                ['STT', 'Mã SV', 'Họ Tên', 'Mã Đề', 'CLO 1 (10đ)', 'CLO 2 (7.5đ)', 'Tổng (17.5đ)']
+            ];
+
+            results.forEach(r => {
+                data.push([r.stt, r.studentId, r.studentName, r.code, r.clo1, r.clo2, r.total]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Kết quả');
+            XLSX.writeFile(wb, `ChamDiem_HangLoat_${new Date().getTime()}.xlsx`);
+        }
+
+        function clearBatchForm() {
+            uploadedData = [];
+            document.getElementById('excelFile').value = '';
+            document.getElementById('fileName').innerHTML = '';
+            document.getElementById('codeColumn').innerHTML = '<option value="">-- Chọn cột --</option>';
+            document.getElementById('answerColumn').innerHTML = '<option value="">-- Chọn cột --</option>';
+            document.getElementById('batchResultContainer').style.display = 'none';
+            document.getElementById('batchExportBtn').innerHTML = '';
+            document.getElementById('batchMessage').innerHTML = '';
+        }
+
+        // ========== PHẦN CHẤM TỪNG SINH VIÊN ==========
         function calculateScore() {
             const studentId = document.getElementById('studentId').value.trim();
             const studentName = document.getElementById('studentName').value.trim();
@@ -678,7 +1019,6 @@
                 return;
             }
 
-            // Parse đáp án sinh viên
             const studentAnswersArray = answersText.toUpperCase().split(/[\s,\n]+/).filter(a => a);
 
             if (studentAnswersArray.length !== 55) {
@@ -686,15 +1026,13 @@
                 return;
             }
 
-            // Kiểm tra các ký tự hợp lệ
             for (let ans of studentAnswersArray) {
                 if (!'ABCD'.includes(ans)) {
-                    showMessage('scoreResult', `Đáp án "${ans}" không hợp lệ (chỉ nhận A, B, C, D)!`, 'error');
+                    showMessage('scoreResult', `Đáp án "${ans}" không hợp lệ!`, 'error');
                     return;
                 }
             }
 
-            // Tính điểm
             let score1 = 0, score2 = 0;
             for (let i = 0; i < 40; i++) {
                 if (studentAnswersArray[i] === correctAnswers[i]) score1 += 0.25;
@@ -705,7 +1043,6 @@
 
             const totalScore = score1 + score2;
 
-            // Hiển thị kết quả
             const result = `
                 <div class="score-result">
                     <h3>📋 Kết Quả Chấm Điểm</h3>
@@ -715,25 +1052,22 @@
                         <p><strong>Mã đề:</strong> ${selectedCode}</p>
                     </div>
                     <div class="score-item">
-                        <strong>CLO 1 (Câu 1-40, 0.25đ/câu):</strong>
+                        <strong>CLO 1 (Câu 1-40):</strong>
                         <span class="score-value">${score1.toFixed(2)} / 10</span>
                     </div>
                     <div class="score-item">
-                        <strong>CLO 2 (Câu 41-55, 0.5đ/câu):</strong>
+                        <strong>CLO 2 (Câu 41-55):</strong>
                         <span class="score-value">${score2.toFixed(2)} / 7.5</span>
                     </div>
-                    <div class="score-total">
-                        🎯 TỔNG ĐIỂM: ${totalScore.toFixed(2)} / 17.5
-                    </div>
-                    <button class="btn-primary" onclick="exportToExcel('${studentId}', '${studentName}', '${selectedCode}', ${score1.toFixed(2)}, ${score2.toFixed(2)}, ${totalScore.toFixed(2)})" style="width: 100%; margin-top: 15px;">📥 Xuất File Excel</button>
+                    <div class="score-total">🎯 TỔNG ĐIỂM: ${totalScore.toFixed(2)} / 17.5</div>
+                    <button class="btn-primary" onclick="exportSingleResult('${studentId}', '${studentName}', '${selectedCode}', ${score1.toFixed(2)}, ${score2.toFixed(2)}, ${totalScore.toFixed(2)})" style="width: 100%; margin-top: 15px;">📥 Xuất File Excel</button>
                 </div>
             `;
 
             document.getElementById('scoreResult').innerHTML = result;
         }
 
-        // Xuất file Excel
-        function exportToExcel(studentId, studentName, code, clo1, clo2, total) {
+        function exportSingleResult(studentId, studentName, code, clo1, clo2, total) {
             const data = [
                 ['HỆ THỐNG CHẤM ĐIỂM BÀI THI'],
                 [],
@@ -752,16 +1086,11 @@
             ];
 
             const ws = XLSX.utils.aoa_to_sheet(data);
-            ws['A1'].font = { bold: true, size: 14 };
-            ws['A8'].font = { bold: true, size: 12 };
-            ws['A14'].font = { bold: true, size: 12 };
-
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Kết quả');
             XLSX.writeFile(wb, `ChamDiem_${studentId}_${new Date().getTime()}.xlsx`);
         }
 
-        // Xóa form
         function clearScoreForm() {
             document.getElementById('studentId').value = '';
             document.getElementById('studentName').value = '';
@@ -770,7 +1099,7 @@
             document.getElementById('scoreResult').innerHTML = '';
         }
 
-        // Hiển thị thông báo
+        // ========== TIỆN ÍCH ==========
         function showMessage(elementId, message, type) {
             const element = document.getElementById(elementId);
             element.innerHTML = `<div class="${type}">${message}</div>`;
