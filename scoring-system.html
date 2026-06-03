@@ -33,14 +33,18 @@ border-radius:8px;
 }
 
 button{
-padding:12px 18px;
+padding:12px 20px;
+border:none;
 background:#4f67f7;
 color:white;
-border:none;
 border-radius:6px;
 cursor:pointer;
 margin-top:10px;
 margin-right:10px;
+}
+
+button:hover{
+opacity:.9;
 }
 
 table{
@@ -134,15 +138,10 @@ onchange="loadStudentFile(this)">
 <tr>
 
 <th>Số báo danh</th>
-
 <th>Mã đề</th>
-
 <th>Reading</th>
-
 <th>Listening</th>
-
 <th>Tổng</th>
-
 <th>Trạng thái</th>
 
 </tr>
@@ -227,11 +226,8 @@ const code=
 String(
 
 row["Mã đề"] ??
-
 row["Mã Đề"] ??
-
 row["Code"] ??
-
 ''
 
 ).trim();
@@ -246,13 +242,12 @@ answers.push(
 
 String(
 
-row[`Câu ${i}`] ??
-
-row[`C${i}`] ??
-
+row[i] ??
 ''
 
 )
+
+.replace(/\s+/g,'')
 
 .trim()
 
@@ -343,7 +338,7 @@ function batchScore(){
 
 if(uploadedData.length===0){
 
-alert("Upload file sinh viên");
+alert("Chưa upload file sinh viên");
 
 return;
 
@@ -355,7 +350,7 @@ Object.keys(answerKeys).length===0
 
 ){
 
-alert("Upload file đáp án");
+alert("Chưa upload file đáp án");
 
 return;
 
@@ -370,13 +365,9 @@ const studentId=
 String(
 
 row["Số báo danh"] ??
-
 row["SBD"] ??
-
 row["MSSV"] ??
-
 row["Mã SV"] ??
-
 `SV_${index}`
 
 ).trim();
@@ -386,11 +377,8 @@ const code=
 String(
 
 row["Mã đề"] ??
-
 row["Mã Đề"] ??
-
 row["Code"] ??
-
 ''
 
 ).trim();
@@ -425,49 +413,39 @@ let reading=0;
 
 let listening=0;
 
-const answerColumns =
+const answerColumns=
 
 Object.keys(row)
 
 .filter(col=>{
 
-const text=
+const num=
 
-String(col).trim();
+parseInt(
 
-return
+String(col).trim()
 
-/^Câu\s*\d+$/i.test(text)
+);
 
-||
+return(
 
-/^C\d+$/i.test(text);
+!isNaN(num)
+
+&&
+
+num>=1
+
+&&
+
+num<=55
+
+);
 
 })
 
 .sort((a,b)=>{
 
-const numA=
-
-parseInt(
-
-a.match(/\d+/)?.[0]
-
-||0
-
-);
-
-const numB=
-
-parseInt(
-
-b.match(/\d+/)?.[0]
-
-||0
-
-);
-
-return numA-numB;
+return parseInt(a)-parseInt(b);
 
 });
 
@@ -482,6 +460,8 @@ String(
 row[col] ?? ''
 
 )
+
+.replace(/\s+/g,'')
 
 .trim()
 
@@ -565,15 +545,7 @@ tbody.innerHTML += `
 
 <td>${r.listening}</td>
 
-<td>
-
-<strong>
-
-${r.total}
-
-</strong>
-
-</td>
+<td><strong>${r.total}</strong></td>
 
 <td>${r.status}</td>
 
@@ -589,7 +561,7 @@ function exportResults(){
 
 if(batchResults.length===0){
 
-alert("Chưa có kết quả");
+alert("Chưa có dữ liệu");
 
 return;
 
