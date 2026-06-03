@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Chấm Điểm Bài Thi</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e0e0e0;
+            background: #f5f5f5;
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            background: white;
+        }
+
+        .tab-button:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+            animation: fadeIn 0.3s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #ee5a52;
+        }
+
+        .answer-input-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .answer-input-row input {
+            padding: 8px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h3 {
+            color: #1565c0;
+            margin-bottom: 8px;
+        }
+
+        .info-box p {
+            color: #0d47a1;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .config-section {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .config-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .success {
+            background: #c8e6c9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+
+        .error {
+            background: #ffcdd2;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+
+        .score-result {
+            background: linear-gradient(135deg, #fff9c4 0%, #fff176 100%);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 2px solid #fdd835;
+        }
+
+        .score-result h3 {
+            color: #f57f17;
+            margin-bottom: 15px;
+        }
+
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #fdd835;
+            align-items: center;
+        }
+
+        .score-item:last-child {
+            border-bottom: none;
+        }
+
+        .score-item strong {
+            color: #333;
+            font-size: 15px;
+        }
+
+        .score-value {
+            background: white;
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #f57f17;
+            font-size: 16px;
+        }
+
+        .score-total {
+            background: #fdd835;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            margin-top: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #f57f17;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        table thead {
+            background: #667eea;
+            color: white;
+        }
+
+        table th,
+        table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        table tr:hover {
+            background: #f5f5f5;
+        }
+
+        .delete-btn {
+            background: #ff6b6b;
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .delete-btn:hover {
+            background: #ee5a52;
+        }
+
+        @media (max-width: 768px) {
+            .row {
+                grid-template-columns: 1fr;
+            }
+
+            .answer-input-row {
+                grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+            }
+
+            .tab-button {
+                min-width: 120px;
+                font-size: 14px;
+                padding: 12px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Hệ Thống Chấm Điểm Bài Thi</h1>
+            <p>CLO 1: Câu 1-40 (0.25 điểm/câu = 10đ) | CLO 2: Câu 41-55 (0.5 điểm/câu = 7.5đ)</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('config', this)">⚙️ Cấu Hình Đáp Án</button>
+            <button class="tab-button" onclick="switchTab('score', this)">✏️ Chấm Điểm</button>
+            <button class="tab-button" onclick="switchTab('guide', this)">📖 Hướng Dẫn</button>
+        </div>
+
+        <!-- TAB 1: CẤU HÌNH -->
+        <div id="config" class="tab-content active">
+            <div class="info-box">
+                <h3>ℹ️ Cấu Hình Đáp Án Theo Mã Đề</h3>
+                <p>Thêm các mã đề và nhập đáp án 55 câu cho mỗi mã đề. Dữ liệu sẽ được lưu trong trình duyệt.</p>
+            </div>
+
+            <div id="codesContainer"></div>
+
+            <div class="button-group">
+                <button class="btn-secondary" onclick="addNewCode()">➕ Thêm Mã Đề Mới</button>
+                <button class="btn-primary" onclick="saveAllConfigs()">💾 Lưu Tất Cả</button>
+            </div>
+            <div id="configMessage"></div>
+        </div>
+
+        <!-- TAB 2: CHẤM ĐIỂM -->
+        <div id="score" class="tab-content">
+            <div class="info-box">
+                <h3>✏️ Nhập Thông Tin & Đáp Án Sinh Viên</h3>
+                <p>Điền thông tin sinh viên, chọn mã đề, và dán đáp án để tính điểm tự động.</p>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label>Mã sinh viên:</label>
+                    <input type="text" id="studentId" placeholder="VD: 21010101">
+                </div>
+                <div class="form-group">
+                    <label>Họ tên sinh viên:</label>
+                    <input type="text" id="studentName" placeholder="VD: Nguyễn Văn A">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Chọn mã đề:</label>
+                <select id="codeSelect">
+                    <option value="">-- Chọn mã đề --</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Dán đáp án 55 câu (cách nhau bằng dấu phẩy, khoảng trắng hoặc xuống dòng):</label>
+                <textarea id="studentAnswers" placeholder="VD: A B C D A ... (55 câu)" rows="8" style="font-family: monospace;"></textarea>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-secondary" onclick="clearScoreForm()">🔄 Xóa</button>
+                <button class="btn-primary" onclick="calculateScore()">🧮 Tính Điểm</button>
+            </div>
+
+            <div id="scoreResult"></div>
+        </div>
+
+        <!-- TAB 3: HƯỚNG DẪN -->
+        <div id="guide" class="tab-content">
+            <h2 style="margin-bottom: 20px; color: #333;">📖 Hướng Dẫn Sử Dụng</h2>
+
+            <div class="config-section">
+                <h3>1️⃣ Bước 1: Cấu Hình Đáp Án</h3>
+                <p style="line-height: 1.8; color: #555;">
+                    • Vào tab <strong>"⚙️ Cấu Hình Đáp Án"</strong><br>
+                    • Bấm <strong>"➕ Thêm Mã Đề Mới"</strong> để thêm mã đề<br>
+                    • Nhập tên mã đề (VD: ĐHXD-2024-A)<br>
+                    • Nhập 55 đáp án, mỗi ô 1 câu (A, B, C hoặc D)<br>
+                    • Bấm <strong>"💾 Lưu Tất Cả"</strong> → dữ liệu được lưu trong trình duyệt
+                </p>
+            </div>
+
+            <div class="config-section">
+                <h3>2️⃣ Bước 2: Chấm Điểm Sinh Viên</h3>
+                <p style="line-height: 1.8; color: #555;">
+                    • Vào tab <strong>"✏️ Chấm Điểm"</strong><br>
+                    • Điền: <strong>Mã sinh viên</strong>, <strong>Họ tên</strong><br>
+                    • Chọn <strong>mã đề</strong> tương ứng<br>
+                    • Dán <strong>55 đáp án</strong> của sinh viên (cách nhau bằng khoảng trắng, phẩy, hoặc xuống dòng)<br>
+                    • Bấm <strong>"🧮 Tính Điểm"</strong> → kết quả hiển thị ngay
+                </p>
+            </div>
+
+            <div class="config-section">
+                <h3>3️⃣ Bước 3: Xuất File Excel</h3>
+                <p style="line-height: 1.8; color: #555;">
+                    • Sau khi tính điểm, bấm <strong>"📥 Xuất File Excel"</strong><br>
+                    • File Excel sẽ tự động download về máy<br>
+                    • Có thể dùng để lưu trữ, chia sẻ, hoặc in kết quả
+                </p>
+            </div>
+
+            <div class="config-section">
+                <h3>📊 Tiêu Chí Chấm Điểm</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th><strong>CLO</strong></th>
+                            <th><strong>Câu</strong></th>
+                            <th><strong>Điểm/Câu</strong></th>
+                            <th><strong>Tổng Điểm</strong></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>CLO 1</strong></td>
+                            <td>Câu 1-40</td>
+                            <td>0.25 điểm</td>
+                            <td style="background: #fff9c4;"><strong>10 điểm</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>CLO 2</strong></td>
+                            <td>Câu 41-55</td>
+                            <td>0.5 điểm</td>
+                            <td style="background: #fff9c4;"><strong>7.5 điểm</strong></td>
+                        </tr>
+                        <tr style="background: #e3f2fd;">
+                            <td colspan="3" style="text-align: right;"><strong>Tổng Cộng:</strong></td>
+                            <td style="background: #fff9c4;"><strong>17.5 điểm</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="config-section">
+                <h3>💡 Mẹo Sử Dụng</h3>
+                <p style="line-height: 1.8; color: #555;">
+                    ✓ Dữ liệu cấu hình lưu trong trình duyệt → không mất khi reload trang<br>
+                    ✓ Có thể chấm liên tiếp nhiều sinh viên<br>
+                    ✓ Xuất file Excel để lưu trữ hoặc chia sẻ<br>
+                    ✓ Nếu muốn xóa mã đề, bấm nút ❌ ở tab cấu hình<br>
+                    ✓ Đáp án chỉ nhận A, B, C, D (không phân biệt chữ hoa/thường)
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Khởi tạo khi load trang
+        window.addEventListener('load', () => {
+            loadConfigs();
+            updateCodeSelect();
+        });
+
+        // Chuyển tab
+        function switchTab(tabName, button) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            button.classList.add('active');
+        }
+
+        // Tải cấu hình từ localStorage
+        function loadConfigs() {
+            const configs = JSON.parse(localStorage.getItem('examConfigs') || '{}');
+            const container = document.getElementById('codesContainer');
+            
+            container.innerHTML = '';
+            
+            if (Object.keys(configs).length === 0) {
+                addNewCode();
+            } else {
+                Object.entries(configs).forEach(([code, answers]) => {
+                    createCodeSection(code, answers);
+                });
+            }
+        }
+
+        // Thêm mã đề mới
+        function addNewCode() {
+            const container = document.getElementById('codesContainer');
+            const index = container.children.length;
+            const section = document.createElement('div');
+            section.className = 'config-section';
+            section.id = `code-section-${index}`;
+            
+            let answersHtml = '';
+            for (let i = 1; i <= 55; i++) {
+                answersHtml += `<input type="text" class="answer-input" maxlength="1" placeholder="${i}" style="text-transform: uppercase;">`;
+            }
+
+            section.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3>Mã Đề ${index + 1}</h3>
+                    <button class="delete-btn" onclick="deleteCodeSection(${index})">❌ Xóa</button>
+                </div>
+                <div class="form-group">
+                    <label>Tên mã đề:</label>
+                    <input type="text" class="code-name" placeholder="VD: ĐHXD-2024-A" value="">
+                </div>
+                <label style="margin-bottom: 10px; font-weight: 600;">Đáp án 55 câu (A, B, C hoặc D):</label>
+                <div class="answer-input-row" style="grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));">
+                    ${answersHtml}
+                </div>
+            `;
+            
+            container.appendChild(section);
+        }
+
+        // Tạo section cấu hình
+        function createCodeSection(codeName, answers) {
+            const container = document.getElementById('codesContainer');
+            const section = document.createElement('div');
+            section.className = 'config-section';
+            section.id = `code-section-${codeName}`;
+            
+            let answersHtml = answers.map((ans, i) => 
+                `<input type="text" class="answer-input" maxlength="1" placeholder="${i+1}" value="${ans}" style="text-transform: uppercase;">`
+            ).join('');
+
+            section.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3>${codeName}</h3>
+                    <button class="delete-btn" onclick="deleteCode('${codeName}')">❌ Xóa</button>
+                </div>
+                <div class="form-group">
+                    <label>Tên mã đề:</label>
+                    <input type="text" class="code-name" value="${codeName}" readonly>
+                </div>
+                <label style="margin-bottom: 10px; font-weight: 600;">Đáp án 55 câu:</label>
+                <div class="answer-input-row" style="grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));">
+                    ${answersHtml}
+                </div>
+            `;
+            
+            container.appendChild(section);
+        }
+
+        // Xóa mã đề
+        function deleteCode(codeName) {
+            if (confirm(`Xóa mã đề "${codeName}"?`)) {
+                const configs = JSON.parse(localStorage.getItem('examConfigs') || '{}');
+                delete configs[codeName];
+                localStorage.setItem('examConfigs', JSON.stringify(configs));
+                loadConfigs();
+                updateCodeSelect();
+                showMessage('configMessage', `✅ Đã xóa mã đề "${codeName}"`, 'success');
+            }
+        }
+
+        // Xóa section
+        function deleteCodeSection(index) {
+            const section = document.getElementById(`code-section-${index}`);
+            if (section) section.remove();
+        }
+
+        // Lưu tất cả cấu hình
+        function saveAllConfigs() {
+            const configs = {};
+            const sections = document.getElementById('codesContainer').children;
+            
+            for (let section of sections) {
+                const codeName = section.querySelector('.code-name').value.trim();
+                
+                if (!codeName) {
+                    showMessage('configMessage', 'Vui lòng nhập tên mã đề!', 'error');
+                    return;
+                }
+
+                const answers = Array.from(section.querySelectorAll('.answer-input')).map(input => input.value.toUpperCase());
+
+                if (answers.length !== 55) {
+                    showMessage('configMessage', `Mã đề "${codeName}" cần đúng 55 câu!`, 'error');
+                    return;
+                }
+
+                for (let ans of answers) {
+                    if (!ans || !'ABCD'.includes(ans)) {
+                        showMessage('configMessage', `Mã đề "${codeName}" chỉ nhận A, B, C, D!`, 'error');
+                        return;
+                    }
+                }
+
+                configs[codeName] = answers;
+            }
+
+            if (Object.keys(configs).length === 0) {
+                showMessage('configMessage', 'Vui lòng thêm ít nhất 1 mã đề!', 'error');
+                return;
+            }
+
+            localStorage.setItem('examConfigs', JSON.stringify(configs));
+            updateCodeSelect();
+            showMessage('configMessage', '✅ Đã lưu tất cả cấu hình!', 'success');
+        }
+
+        // Cập nhật dropdown mã đề
+        function updateCodeSelect() {
+            const configs = JSON.parse(localStorage.getItem('examConfigs') || '{}');
+            const select = document.getElementById('codeSelect');
+            
+            select.innerHTML = '<option value="">-- Chọn mã đề --</option>';
+            Object.keys(configs).forEach(code => {
+                select.innerHTML += `<option value="${code}">${code}</option>`;
+            });
+        }
+
+        // Tính điểm
+        function calculateScore() {
+            const studentId = document.getElementById('studentId').value.trim();
+            const studentName = document.getElementById('studentName').value.trim();
+            const selectedCode = document.getElementById('codeSelect').value;
+            const answersText = document.getElementById('studentAnswers').value.trim();
+
+            if (!studentId || !studentName || !selectedCode || !answersText) {
+                showMessage('scoreResult', 'Vui lòng điền đầy đủ thông tin!', 'error');
+                return;
+            }
+
+            const configs = JSON.parse(localStorage.getItem('examConfigs') || '{}');
+            const correctAnswers = configs[selectedCode];
+
+            if (!correctAnswers) {
+                showMessage('scoreResult', 'Mã đề không hợp lệ!', 'error');
+                return;
+            }
+
+            // Parse đáp án sinh viên
+            const studentAnswersArray = answersText.toUpperCase().split(/[\s,\n]+/).filter(a => a);
+
+            if (studentAnswersArray.length !== 55) {
+                showMessage('scoreResult', `Bạn nhập ${studentAnswersArray.length} câu, cần đúng 55 câu!`, 'error');
+                return;
+            }
+
+            // Kiểm tra các ký tự hợp lệ
+            for (let ans of studentAnswersArray) {
+                if (!'ABCD'.includes(ans)) {
+                    showMessage('scoreResult', `Đáp án "${ans}" không hợp lệ (chỉ nhận A, B, C, D)!`, 'error');
+                    return;
+                }
+            }
+
+            // Tính điểm
+            let score1 = 0, score2 = 0;
+            for (let i = 0; i < 40; i++) {
+                if (studentAnswersArray[i] === correctAnswers[i]) score1 += 0.25;
+            }
+            for (let i = 40; i < 55; i++) {
+                if (studentAnswersArray[i] === correctAnswers[i]) score2 += 0.5;
+            }
+
+            const totalScore = score1 + score2;
+
+            // Hiển thị kết quả
+            const result = `
+                <div class="score-result">
+                    <h3>📋 Kết Quả Chấm Điểm</h3>
+                    <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 2px solid #fdd835;">
+                        <p><strong>Mã SV:</strong> ${studentId}</p>
+                        <p><strong>Họ tên:</strong> ${studentName}</p>
+                        <p><strong>Mã đề:</strong> ${selectedCode}</p>
+                    </div>
+                    <div class="score-item">
+                        <strong>CLO 1 (Câu 1-40, 0.25đ/câu):</strong>
+                        <span class="score-value">${score1.toFixed(2)} / 10</span>
+                    </div>
+                    <div class="score-item">
+                        <strong>CLO 2 (Câu 41-55, 0.5đ/câu):</strong>
+                        <span class="score-value">${score2.toFixed(2)} / 7.5</span>
+                    </div>
+                    <div class="score-total">
+                        🎯 TỔNG ĐIỂM: ${totalScore.toFixed(2)} / 17.5
+                    </div>
+                    <button class="btn-primary" onclick="exportToExcel('${studentId}', '${studentName}', '${selectedCode}', ${score1.toFixed(2)}, ${score2.toFixed(2)}, ${totalScore.toFixed(2)})" style="width: 100%; margin-top: 15px;">📥 Xuất File Excel</button>
+                </div>
+            `;
+
+            document.getElementById('scoreResult').innerHTML = result;
+        }
+
+        // Xuất file Excel
+        function exportToExcel(studentId, studentName, code, clo1, clo2, total) {
+            const data = [
+                ['HỆ THỐNG CHẤM ĐIỂM BÀI THI'],
+                [],
+                ['Mã sinh viên:', studentId],
+                ['Họ tên:', studentName],
+                ['Mã đề:', code],
+                ['Ngày chấm:', new Date().toLocaleDateString('vi-VN')],
+                [],
+                ['KẾT QUẢ CHẤM ĐIỂM'],
+                [],
+                ['Chuẩn Đầu Ra (CLO)', 'Điểm Số', 'Tổng Điểm'],
+                ['CLO 1 (Câu 1-40 × 0.25đ)', clo1, '10'],
+                ['CLO 2 (Câu 41-55 × 0.5đ)', clo2, '7.5'],
+                [],
+                ['TỔNG CỘNG', total, '17.5']
+            ];
+
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            ws['A1'].font = { bold: true, size: 14 };
+            ws['A8'].font = { bold: true, size: 12 };
+            ws['A14'].font = { bold: true, size: 12 };
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Kết quả');
+            XLSX.writeFile(wb, `ChamDiem_${studentId}_${new Date().getTime()}.xlsx`);
+        }
+
+        // Xóa form
+        function clearScoreForm() {
+            document.getElementById('studentId').value = '';
+            document.getElementById('studentName').value = '';
+            document.getElementById('codeSelect').value = '';
+            document.getElementById('studentAnswers').value = '';
+            document.getElementById('scoreResult').innerHTML = '';
+        }
+
+        // Hiển thị thông báo
+        function showMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="${type}">${message}</div>`;
+            setTimeout(() => {
+                element.innerHTML = '';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
