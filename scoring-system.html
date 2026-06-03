@@ -1,8 +1,13 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<meta name="viewport"
+content="width=device-width,initial-scale=1">
+
 <title>Hệ Thống Chấm Điểm</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -10,7 +15,7 @@
 <style>
 
 body{
-font-family:Arial,sans-serif;
+font-family:Arial;
 background:#f4f6fb;
 padding:20px;
 margin:0;
@@ -33,68 +38,120 @@ border-radius:8px;
 }
 
 button{
-padding:12px 20px;
-border:none;
-background:#4f67f7;
-color:white;
-border-radius:6px;
-cursor:pointer;
-margin-top:10px;
-margin-right:10px;
-}
 
-button:hover{
-opacity:.9;
+padding:12px 18px;
+
+border:none;
+
+border-radius:6px;
+
+background:#4f67f7;
+
+color:white;
+
+cursor:pointer;
+
+margin-top:10px;
+
+margin-right:10px;
+
 }
 
 table{
+
 width:100%;
+
 border-collapse:collapse;
+
 margin-top:20px;
+
 }
 
 th,td{
+
 border:1px solid #ddd;
+
 padding:10px;
+
 text-align:center;
+
 }
 
 th{
+
 background:#4f67f7;
+
 color:white;
+
 }
 
 .message{
+
 padding:10px;
+
 margin-top:10px;
+
 border-radius:5px;
+
 }
 
 .success{
+
 background:#d4edda;
+
 }
 
 .error{
+
 background:#ffd6d6;
+
 }
 
 </style>
+
 </head>
 
 <body>
 
 <div class="container">
 
-<h1>📊 Hệ Thống Chấm Điểm Bài Thi</h1>
+<h1>
+
+📊 Hệ Thống Chấm Điểm
+
+</h1>
 
 <div class="section">
 
-<h3>Upload File Đáp Án</h3>
+<h3>
+
+Upload File Đáp Án
+
+</h3>
 
 <input
+
+id="answerFile"
+
 type="file"
+
 accept=".xlsx,.xls"
-onchange="loadAnswerFile(this)">
+
+onchange="loadAnswerFile(this)"
+
+>
+
+<button onclick="replaceAnswerFile()">
+
+🔄 Đổi File Đáp Án
+
+</button>
+
+<button onclick="clearAnswers()">
+
+🗑 Xóa Đáp Án
+
+</button>
 
 <div id="answerMessage"></div>
 
@@ -102,16 +159,23 @@ onchange="loadAnswerFile(this)">
 
 <div class="section">
 
-<h3>Upload File Sinh Viên</h3>
+<h3>
+
+Upload File Sinh Viên
+
+</h3>
 
 <input
+
 type="file"
+
 accept=".xlsx,.xls"
-onchange="loadStudentFile(this)">
+
+onchange="loadStudentFile(this)"
+
+>
 
 <div id="studentMessage"></div>
-
-<br>
 
 <button onclick="batchScore()">
 
@@ -129,8 +193,6 @@ onchange="loadStudentFile(this)">
 
 <div class="section">
 
-<h2>Kết quả</h2>
-
 <table>
 
 <thead>
@@ -138,10 +200,15 @@ onchange="loadStudentFile(this)">
 <tr>
 
 <th>Số báo danh</th>
+
 <th>Mã đề</th>
+
 <th>Reading</th>
+
 <th>Listening</th>
+
 <th>Tổng</th>
+
 <th>Trạng thái</th>
 
 </tr>
@@ -162,59 +229,160 @@ onchange="loadStudentFile(this)">
 
 let uploadedData=[];
 
-let answerKeys={};
-
 let batchResults=[];
 
-function showMessage(id,msg,type){
+let answerKeys=
 
-document.getElementById(id).innerHTML=
+JSON.parse(
 
-`<div class="message ${type}">
+localStorage.getItem(
+
+"answerKeys"
+
+)
+
+||
+
+"{}"
+
+);
+
+window.addEventListener(
+
+"load",
+
+()=>{
+
+if(
+
+Object.keys(
+
+answerKeys
+
+).length>0
+
+){
+
+showMessage(
+
+"answerMessage",
+
+`Đã khôi phục ${Object.keys(answerKeys).length} mã đề đã lưu`,
+
+"success"
+
+);
+
+}
+
+}
+
+);
+
+function showMessage(
+
+id,
+
+msg,
+
+type
+
+){
+
+document.getElementById(id)
+
+.innerHTML=
+
+`<div class="${type} message">
+
 ${msg}
+
 </div>`;
+
+}
+
+function replaceAnswerFile(){
+
+document.getElementById(
+
+"answerFile"
+
+).click();
+
+}
+
+function clearAnswers(){
+
+localStorage.removeItem(
+
+"answerKeys"
+
+);
+
+answerKeys={};
+
+showMessage(
+
+"answerMessage",
+
+"Đã xóa đáp án đã lưu",
+
+"success"
+
+);
 
 }
 
 function loadAnswerFile(input){
 
-const file=input.files[0];
+const file=
+
+input.files[0];
 
 if(!file)return;
 
-const reader=new FileReader();
+const reader=
+
+new FileReader();
 
 reader.onload=(e)=>{
-
-const data=
-
-new Uint8Array(
-e.target.result
-);
 
 const wb=
 
 XLSX.read(
-data,
+
+new Uint8Array(
+
+e.target.result
+
+),
+
 {
-type:'array'
+
+type:"array"
+
 }
+
 );
-
-const sheet=
-
-wb.Sheets[
-wb.SheetNames[0]
-];
 
 const rows=
 
 XLSX.utils.sheet_to_json(
-sheet,
+
+wb.Sheets[
+
+wb.SheetNames[0]
+
+],
+
 {
+
 defval:'',
+
 raw:false
+
 }
+
 );
 
 answerKeys={};
@@ -225,9 +393,18 @@ const code=
 
 String(
 
-row["Mã đề"] ??
-row["Mã Đề"] ??
-row["Code"] ??
+row["Mã đề"]
+
+??
+
+row["Mã Đề"]
+
+??
+
+row["Code"]
+
+??
+
 ''
 
 ).trim();
@@ -236,13 +413,24 @@ if(!code)return;
 
 let answers=[];
 
-for(let i=1;i<=55;i++){
+for(
+
+let i=1;
+
+i<=55;
+
+i++
+
+){
 
 answers.push(
 
 String(
 
-row[i] ??
+row[i]
+
+??
+
 ''
 
 )
@@ -261,11 +449,23 @@ answerKeys[code]=answers;
 
 });
 
+localStorage.setItem(
+
+"answerKeys",
+
+JSON.stringify(
+
+answerKeys
+
+)
+
+);
+
 showMessage(
 
 "answerMessage",
 
-`Đã load ${Object.keys(answerKeys).length} mã đề`,
+`Đã lưu ${Object.keys(answerKeys).length} mã đề`,
 
 "success"
 
@@ -273,49 +473,64 @@ showMessage(
 
 };
 
-reader.readAsArrayBuffer(file);
+reader.readAsArrayBuffer(
+
+file
+
+);
 
 }
 
 function loadStudentFile(input){
 
-const file=input.files[0];
+const file=
+
+input.files[0];
 
 if(!file)return;
 
-const reader=new FileReader();
+const reader=
+
+new FileReader();
 
 reader.onload=(e)=>{
-
-const data=
-
-new Uint8Array(
-e.target.result
-);
 
 const wb=
 
 XLSX.read(
-data,
+
+new Uint8Array(
+
+e.target.result
+
+),
+
 {
-type:'array'
+
+type:"array"
+
 }
+
 );
-
-const sheet=
-
-wb.Sheets[
-wb.SheetNames[0]
-];
 
 uploadedData=
 
 XLSX.utils.sheet_to_json(
-sheet,
+
+wb.Sheets[
+
+wb.SheetNames[0]
+
+],
+
 {
+
 defval:'',
+
 raw:false
+
 }
+
 );
 
 showMessage(
@@ -330,15 +545,27 @@ showMessage(
 
 };
 
-reader.readAsArrayBuffer(file);
+reader.readAsArrayBuffer(
+
+file
+
+);
 
 }
 
 function batchScore(){
 
-if(uploadedData.length===0){
+if(
 
-alert("Chưa upload file sinh viên");
+uploadedData.length===0
+
+){
+
+alert(
+
+"Chưa upload file sinh viên"
+
+);
 
 return;
 
@@ -346,11 +573,19 @@ return;
 
 if(
 
-Object.keys(answerKeys).length===0
+Object.keys(
+
+answerKeys
+
+).length===0
 
 ){
 
-alert("Chưa upload file đáp án");
+alert(
+
+"Chưa upload file đáp án"
+
+);
 
 return;
 
@@ -358,16 +593,30 @@ return;
 
 batchResults=[];
 
-uploadedData.forEach((row,index)=>{
+uploadedData.forEach(
+
+(row,index)=>{
 
 const studentId=
 
 String(
 
-row["Số báo danh"] ??
-row["SBD"] ??
-row["MSSV"] ??
-row["Mã SV"] ??
+row["Số báo danh"]
+
+??
+
+row["SBD"]
+
+??
+
+row["MSSV"]
+
+??
+
+row["Mã SV"]
+
+??
+
 `SV_${index}`
 
 ).trim();
@@ -376,9 +625,18 @@ const code=
 
 String(
 
-row["Mã đề"] ??
-row["Mã Đề"] ??
-row["Code"] ??
+row["Mã đề"]
+
+??
+
+row["Mã Đề"]
+
+??
+
+row["Code"]
+
+??
+
 ''
 
 ).trim();
@@ -401,7 +659,9 @@ listening:"Lỗi",
 
 total:"Lỗi",
 
-status:"Không tìm mã đề"
+status:
+
+"Không tìm mã đề"
 
 });
 
@@ -419,35 +679,43 @@ Object.keys(row)
 
 .filter(col=>{
 
-const num=
+const n=
 
 parseInt(
 
-String(col).trim()
+String(col)
+
+.trim()
 
 );
 
 return(
 
-!isNaN(num)
+!isNaN(n)
 
 &&
 
-num>=1
+n>=1
 
 &&
 
-num<=55
+n<=55
 
 );
 
 })
 
-.sort((a,b)=>{
+.sort(
 
-return parseInt(a)-parseInt(b);
+(a,b)=>
 
-});
+parseInt(a)
+
+-
+
+parseInt(b)
+
+);
 
 answerColumns.forEach(
 
@@ -457,7 +725,11 @@ const ans=
 
 String(
 
-row[col] ?? ''
+row[col]
+
+??
+
+''
 
 )
 
@@ -473,7 +745,11 @@ ans===key[index]
 
 ){
 
-if(index<40){
+if(
+
+index<40
+
+){
 
 reading+=0.25;
 
@@ -507,7 +783,13 @@ listening.toFixed(2),
 
 total:
 
-(reading+listening)
+(
+
+reading+
+
+listening
+
+)
 
 .toFixed(2),
 
@@ -526,14 +808,16 @@ function renderResults(){
 const tbody=
 
 document.getElementById(
+
 "resultBody"
+
 );
 
 tbody.innerHTML='';
 
 batchResults.forEach(r=>{
 
-tbody.innerHTML += `
+tbody.innerHTML +=`
 
 <tr>
 
@@ -545,7 +829,15 @@ tbody.innerHTML += `
 
 <td>${r.listening}</td>
 
-<td><strong>${r.total}</strong></td>
+<td>
+
+<strong>
+
+${r.total}
+
+</strong>
+
+</td>
 
 <td>${r.status}</td>
 
@@ -558,14 +850,6 @@ tbody.innerHTML += `
 }
 
 function exportResults(){
-
-if(batchResults.length===0){
-
-alert("Chưa có dữ liệu");
-
-return;
-
-}
 
 const data=[
 
@@ -610,7 +894,9 @@ r.status
 const ws=
 
 XLSX.utils.aoa_to_sheet(
+
 data
+
 );
 
 const wb=
@@ -640,4 +926,5 @@ wb,
 </script>
 
 </body>
+
 </html>
