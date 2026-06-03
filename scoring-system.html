@@ -1,14 +1,9 @@
 <!DOCTYPE html>
 <html lang="vi">
-
 <head>
-
 <meta charset="UTF-8">
-
-<meta name="viewport"
-content="width=device-width,initial-scale=1">
-
-<title>Hệ Thống Chấm Điểm</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chấm điểm 1 file</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -18,93 +13,42 @@ body{
 font-family:Arial;
 background:#f4f6fb;
 padding:20px;
-margin:0;
 }
 
 .container{
-max-width:1300px;
+max-width:1400px;
 margin:auto;
 background:white;
 padding:25px;
 border-radius:10px;
-box-shadow:0 0 20px rgba(0,0,0,.1);
-}
-
-.section{
-margin-bottom:25px;
-padding:20px;
-border:1px solid #ddd;
-border-radius:8px;
+box-shadow:0 0 15px rgba(0,0,0,.1);
 }
 
 button{
-
 padding:12px 18px;
-
 border:none;
-
-border-radius:6px;
-
 background:#4f67f7;
-
 color:white;
-
+border-radius:6px;
 cursor:pointer;
-
 margin-top:10px;
-
-margin-right:10px;
-
 }
 
 table{
-
 width:100%;
-
 border-collapse:collapse;
-
 margin-top:20px;
-
 }
 
 th,td{
-
 border:1px solid #ddd;
-
 padding:10px;
-
 text-align:center;
-
 }
 
 th{
-
 background:#4f67f7;
-
 color:white;
-
-}
-
-.message{
-
-padding:10px;
-
-margin-top:10px;
-
-border-radius:5px;
-
-}
-
-.success{
-
-background:#d4edda;
-
-}
-
-.error{
-
-background:#ffd6d6;
-
 }
 
 </style>
@@ -115,83 +59,29 @@ background:#ffd6d6;
 
 <div class="container">
 
-<h1>
-
-📊 Hệ Thống Chấm Điểm
-
-</h1>
-
-<div class="section">
-
-<h3>
-
-Upload File Đáp Án
-
-</h3>
+<h1>📊 Hệ thống chấm điểm 1 file</h1>
 
 <input
-
-id="answerFile"
-
 type="file"
-
 accept=".xlsx,.xls"
-
-onchange="loadAnswerFile(this)"
-
+onchange="loadExcel(this)"
 >
 
-<button onclick="replaceAnswerFile()">
+<br>
 
-🔄 Đổi File Đáp Án
+<button onclick="scoreAll()">
 
-</button>
-
-<button onclick="clearAnswers()">
-
-🗑 Xóa Đáp Án
+🧮 Chấm điểm
 
 </button>
 
-<div id="answerMessage"></div>
-
-</div>
-
-<div class="section">
-
-<h3>
-
-Upload File Sinh Viên
-
-</h3>
-
-<input
-
-type="file"
-
-accept=".xlsx,.xls"
-
-onchange="loadStudentFile(this)"
-
->
-
-<div id="studentMessage"></div>
-
-<button onclick="batchScore()">
-
-🧮 Chấm Điểm
-
-</button>
-
-<button onclick="exportResults()">
+<button onclick="exportExcel()">
 
 📥 Xuất Excel
 
 </button>
 
-</div>
-
-<div class="section">
+<div id="message"></div>
 
 <table>
 
@@ -199,16 +89,11 @@ onchange="loadStudentFile(this)"
 
 <tr>
 
-<th>Số báo danh</th>
-
+<th>SBD</th>
 <th>Mã đề</th>
-
 <th>Reading</th>
-
 <th>Listening</th>
-
 <th>Tổng</th>
-
 <th>Trạng thái</th>
 
 </tr>
@@ -223,127 +108,33 @@ onchange="loadStudentFile(this)"
 
 </div>
 
-</div>
-
 <script>
 
-let uploadedData=[];
+let rawRows=[];
 
-let batchResults=[];
+let answerKeys={};
 
-let answerKeys=
+let students=[];
 
-JSON.parse(
+let results=[];
 
-localStorage.getItem(
-
-"answerKeys"
-
-)
-
-||
-
-"{}"
-
-);
-
-window.addEventListener(
-
-"load",
-
-()=>{
-
-if(
-
-Object.keys(
-
-answerKeys
-
-).length>0
-
-){
-
-showMessage(
-
-"answerMessage",
-
-`Đã khôi phục ${Object.keys(answerKeys).length} mã đề đã lưu`,
-
-"success"
-
-);
-
-}
-
-}
-
-);
-
-function showMessage(
-
-id,
-
-msg,
-
-type
-
-){
-
-document.getElementById(id)
-
-.innerHTML=
-
-`<div class="${type} message">
-
-${msg}
-
-</div>`;
-
-}
-
-function replaceAnswerFile(){
+function msg(text){
 
 document.getElementById(
 
-"answerFile"
+"message"
 
-).click();
-
-}
-
-function clearAnswers(){
-
-localStorage.removeItem(
-
-"answerKeys"
-
-);
-
-answerKeys={};
-
-showMessage(
-
-"answerMessage",
-
-"Đã xóa đáp án đã lưu",
-
-"success"
-
-);
+).innerHTML=text;
 
 }
 
-function loadAnswerFile(input){
+function loadExcel(input){
 
-const file=
-
-input.files[0];
+const file=input.files[0];
 
 if(!file)return;
 
-const reader=
-
-new FileReader();
+const reader=new FileReader();
 
 reader.onload=(e)=>{
 
@@ -357,27 +148,27 @@ e.target.result
 
 ),
 
-{
-
-type:"array"
-
-}
+{type:"array"}
 
 );
 
-const rows=
+const sheet=
+
+wb.Sheets[
+wb.SheetNames[0]
+];
+
+rawRows=
 
 XLSX.utils.sheet_to_json(
 
-wb.Sheets[
-
-wb.SheetNames[0]
-
-],
+sheet,
 
 {
 
-defval:'',
+header:1,
+
+defval:"",
 
 raw:false
 
@@ -385,311 +176,133 @@ raw:false
 
 );
 
+prepareData();
+
+};
+
+reader.readAsArrayBuffer(file);
+
+}
+
+function prepareData(){
+
 answerKeys={};
 
-rows.forEach(row=>{
+students=[];
 
-const code=
-
-String(
-
-row["Mã đề"]
-
-??
-
-row["Mã Đề"]
-
-??
-
-row["Code"]
-
-??
-
-''
-
-).trim();
-
-if(!code)return;
-
-let answers=[];
+let headerRow=-1;
 
 for(
 
-let i=1;
+let i=0;
 
-i<=55;
+i<rawRows.length;
 
 i++
 
 ){
 
-answers.push(
+const row=
 
-String(
+rawRows[i]
 
-row[i]
+.map(x=>
 
-??
-
-''
-
-)
-
-.replace(/\s+/g,'')
+String(x)
 
 .trim()
 
-.toUpperCase()
-
 );
+
+if(
+
+row.includes("SBD")
+
+){
+
+headerRow=i;
+
+break;
 
 }
 
-answerKeys[code]=answers;
+}
 
-});
+if(
 
-localStorage.setItem(
+headerRow===-1
 
-"answerKeys",
+){
 
-JSON.stringify(
+msg(
 
-answerKeys
+"❌ Không tìm thấy hàng SBD"
+
+);
+
+return;
+
+}
+
+const header=
+
+rawRows[headerRow]
+
+.map(x=>
+
+String(x)
+
+.trim()
+
+);
+
+const sbdIndex=
+
+header.indexOf(
+
+"SBD"
+
+);
+
+const codeIndex=
+
+header.indexOf(
+
+"Mã Đề"
+
+)>=0
+
+?
+
+header.indexOf(
+
+"Mã Đề"
 
 )
 
-);
+:
 
-showMessage(
+header.indexOf(
 
-"answerMessage",
-
-`Đã lưu ${Object.keys(answerKeys).length} mã đề`,
-
-"success"
+"Mã đề"
 
 );
 
-};
+const questionCols=[];
 
-reader.readAsArrayBuffer(
+header.forEach(
 
-file
-
-);
-
-}
-
-function loadStudentFile(input){
-
-const file=
-
-input.files[0];
-
-if(!file)return;
-
-const reader=
-
-new FileReader();
-
-reader.onload=(e)=>{
-
-const wb=
-
-XLSX.read(
-
-new Uint8Array(
-
-e.target.result
-
-),
-
-{
-
-type:"array"
-
-}
-
-);
-
-uploadedData=
-
-XLSX.utils.sheet_to_json(
-
-wb.Sheets[
-
-wb.SheetNames[0]
-
-],
-
-{
-
-defval:'',
-
-raw:false
-
-}
-
-);
-
-showMessage(
-
-"studentMessage",
-
-`Đã load ${uploadedData.length} sinh viên`,
-
-"success"
-
-);
-
-};
-
-reader.readAsArrayBuffer(
-
-file
-
-);
-
-}
-
-function batchScore(){
-
-if(
-
-uploadedData.length===0
-
-){
-
-alert(
-
-"Chưa upload file sinh viên"
-
-);
-
-return;
-
-}
-
-if(
-
-Object.keys(
-
-answerKeys
-
-).length===0
-
-){
-
-alert(
-
-"Chưa upload file đáp án"
-
-);
-
-return;
-
-}
-
-batchResults=[];
-
-uploadedData.forEach(
-
-(row,index)=>{
-
-const studentId=
-
-String(
-
-row["Số báo danh"]
-
-??
-
-row["SBD"]
-
-??
-
-row["MSSV"]
-
-??
-
-row["Mã SV"]
-
-??
-
-`SV_${index}`
-
-).trim();
-
-const code=
-
-String(
-
-row["Mã đề"]
-
-??
-
-row["Mã Đề"]
-
-??
-
-row["Code"]
-
-??
-
-''
-
-).trim();
-
-const key=
-
-answerKeys[code];
-
-if(!key){
-
-batchResults.push({
-
-studentId,
-
-code,
-
-reading:"Lỗi",
-
-listening:"Lỗi",
-
-total:"Lỗi",
-
-status:
-
-"Không tìm mã đề"
-
-});
-
-return;
-
-}
-
-let reading=0;
-
-let listening=0;
-
-const answerColumns=
-
-Object.keys(row)
-
-.filter(col=>{
+(col,index)=>{
 
 const n=
 
 parseInt(
 
-String(col)
-
-.trim()
+col
 
 );
 
-return(
+if(
 
 !isNaN(n)
 
@@ -701,39 +314,185 @@ n>=1
 
 n<=55
 
+){
+
+questionCols.push({
+
+question:n,
+
+col:index
+
+});
+
+}
+
+}
+
 );
 
-})
-
-.sort(
+questionCols.sort(
 
 (a,b)=>
 
-parseInt(a)
-
--
-
-parseInt(b)
+a.question-b.question
 
 );
 
-answerColumns.forEach(
+for(
 
-(col,index)=>{
+let i=0;
+
+i<headerRow;
+
+i++
+
+){
+
+const row=
+
+rawRows[i];
+
+const code=
+
+String(
+
+row[codeIndex] ?? ''
+
+)
+
+.trim();
+
+if(!code)continue;
+
+let ans=[];
+
+questionCols.forEach(q=>{
+
+ans.push(
+
+String(
+
+row[q.col] ?? ''
+
+)
+
+.trim()
+
+.toUpperCase()
+
+);
+
+});
+
+answerKeys[code]=ans;
+
+}
+
+for(
+
+let i=headerRow+1;
+
+i<rawRows.length;
+
+i++
+
+){
+
+const row=
+
+rawRows[i];
+
+const sbd=
+
+String(
+
+row[sbdIndex] ?? ''
+
+)
+
+.trim();
+
+if(!sbd)continue;
+
+students.push({
+
+sbd,
+
+code:
+
+String(
+
+row[codeIndex] ?? ''
+
+)
+
+.trim(),
+
+row
+
+});
+
+}
+
+msg(
+
+`Đọc được ${students.length} sinh viên và ${Object.keys(answerKeys).length} mã đề`
+
+);
+
+window.questionCols=
+
+questionCols;
+
+}
+
+function scoreAll(){
+
+results=[];
+
+students.forEach(st=>{
+
+const key=
+
+answerKeys[st.code];
+
+if(!key){
+
+results.push({
+
+sbd:st.sbd,
+
+code:st.code,
+
+reading:"Lỗi",
+
+listening:"Lỗi",
+
+total:"Lỗi",
+
+status:"Không có mã đề"
+
+});
+
+return;
+
+}
+
+let reading=0;
+
+let listening=0;
+
+questionCols.forEach(
+
+(q,index)=>{
 
 const ans=
 
 String(
 
-row[col]
-
-??
-
-''
+st.row[q.col] ?? ''
 
 )
-
-.replace(/\s+/g,'')
 
 .trim()
 
@@ -767,11 +526,11 @@ listening+=0.5;
 
 );
 
-batchResults.push({
+results.push({
 
-studentId,
+sbd:st.sbd,
 
-code,
+code:st.code,
 
 reading:
 
@@ -789,9 +548,7 @@ reading+
 
 listening
 
-)
-
-.toFixed(2),
+).toFixed(2),
 
 status:"OK"
 
@@ -799,11 +556,11 @@ status:"OK"
 
 });
 
-renderResults();
+render();
 
 }
 
-function renderResults(){
+function render(){
 
 const tbody=
 
@@ -815,13 +572,13 @@ document.getElementById(
 
 tbody.innerHTML='';
 
-batchResults.forEach(r=>{
+results.forEach(r=>{
 
-tbody.innerHTML +=`
+tbody.innerHTML += `
 
 <tr>
 
-<td>${r.studentId}</td>
+<td>${r.sbd}</td>
 
 <td>${r.code}</td>
 
@@ -829,15 +586,7 @@ tbody.innerHTML +=`
 
 <td>${r.listening}</td>
 
-<td>
-
-<strong>
-
-${r.total}
-
-</strong>
-
-</td>
+<td>${r.total}</td>
 
 <td>${r.status}</td>
 
@@ -849,13 +598,13 @@ ${r.total}
 
 }
 
-function exportResults(){
+function exportExcel(){
 
 const data=[
 
 [
 
-"Số báo danh",
+"SBD",
 
 "Mã đề",
 
@@ -871,11 +620,11 @@ const data=[
 
 ];
 
-batchResults.forEach(r=>{
+results.forEach(r=>{
 
 data.push([
 
-r.studentId,
+r.sbd,
 
 r.code,
 
@@ -917,7 +666,7 @@ XLSX.writeFile(
 
 wb,
 
-`KetQuaCham_${Date.now()}.xlsx`
+`KetQua_${Date.now()}.xlsx`
 
 );
 
@@ -926,5 +675,4 @@ wb,
 </script>
 
 </body>
-
 </html>
